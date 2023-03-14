@@ -94,8 +94,6 @@ int a_max = 1935; //define the maximum current in the panel when input value on 
 int plim_max = 100; //define the multiplier (percent) for the power limit sensor in the panel when input value on arduino is 5V (1023)
 
 
-int nrf_data_packet[14]; //array of variables to be sent, the array seems one smaller than total number of variables because 0-9 not 1-10
-
 //==============================STRINGS FOR EASIER READING OF SERIAL==============================
 char gen1_onstate[] = "ON ";
 char gen1_offstate[] = "OFF";
@@ -112,9 +110,9 @@ Serial.begin(115200); //start serial communications for debugging
 dht_sensor1.begin();  //start the dht_sensor1 object
 tx_module.begin(); //initialize the TX module
 tx_module.openWritingPipe(address); //open communication pipe
-tx_module.setPALevel(RF24_PA_MAX); //set power of NRF module, can be changed to RF24_PA_MIN for lowest power consumption, BUT MUST BE SAME ON THE TX MODULE!!!
+tx_module.setPALevel(RF24_PA_MAX); //set power of NRF module, can be changed to RF24_PA_MIN for lowest power consumption, BUT MUST BE SAME ON THE RX MODULE!!!
 tx_module.setDataRate(RF24_250KBPS); //set bit rate to lowest possible value for best range
-tx_module.setPayloadSize(sizeof(nrf_data_packet));
+tx_module.setPayloadSize(32);
 tx_module.stopListening(); //puts the NRF module into TRANSMIT MODE
 
 //==============================PIN MODES==============================
@@ -171,6 +169,8 @@ pump2_amps_val = map(analogRead(pump2_amps_pin), 0, 1023, 0, a_max); //read and 
 powerlim_val = map(analogRead(powerlim_pin), 0, 1023, 0, plim_max); //read and map power limit value
 
 //==============================STORE DATA IN THE ARRAY nrf_data_packet TO BE SENT OVER THE NRF MODULE==============================
+int nrf_data_packet[14]; //array of variables to be sent, the array seems one smaller than total number of variables because 0-9 not 1-10
+
 nrf_data_packet[0] = h;
 nrf_data_packet[1] = t;
 
@@ -193,7 +193,7 @@ nrf_data_packet[13] = pump2_amps_val;
 nrf_data_packet[14] = powerlim_val;
 
 //==============================SEND DATA OVER tx_module==============================
-tx_module.write(nrf_data_packet, sizeof(nrf_data_packet)); //sends the values to be transmitted
+tx_module.write(nrf_data_packet, 32); //sends the values to be transmitted
 
 //==============================SERIAL OUTPUT==============================
 Serial.print(" Humidity =:"); Serial.print(h); Serial.print("%"); Serial.print("["); Serial.print(nrf_data_packet[0]); Serial.print("]");//output humidity to serial, and value stored in array position[0]
