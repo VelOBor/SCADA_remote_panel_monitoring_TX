@@ -193,7 +193,7 @@ nrf_data_packet[13] = pump2_amps_val;
 nrf_data_packet[14] = powerlim_val;
 
 //==============================SEND DATA OVER tx_module==============================
-tx_module.write(nrf_data_packet, 32); //sends the values to be transmitted
+tx_module.write(&nrf_data_packet, 32); //sends the values to be transmitted
 
 //==============================SERIAL OUTPUT==============================
 Serial.print(" Humidity =:"); Serial.print(h); Serial.print("%"); Serial.print("["); Serial.print(nrf_data_packet[0]); Serial.print("]");//output humidity to serial, and value stored in array position[0]
