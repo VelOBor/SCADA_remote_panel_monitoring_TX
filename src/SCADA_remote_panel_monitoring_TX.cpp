@@ -24,7 +24,7 @@ Power limit % (A) - A8
 Temperature box DHT (D) - D2
 ========NRF pins========
 CE - 8
-CSN - 7
+CSN - 9
 
 */
 //==============================LIBRARIES==============================
@@ -40,9 +40,9 @@ CSN - 7
 DHT dht_sensor1(DHTPIN1, DHTTYPE1); //initialize the DHT library object dht_sensor1 type DHTTYPE1 connected to pin DHTPIN1 
 
 const int pinCE = 8; //NRF pin CE connected to pin 8 of the arduino
-const int pinCSN = 7;  //NRF pin CSN connected to pin 7 of the arduino
+const int pinCSN = 9;  //NRF pin CSN connected to pin 7 of the arduino
 RF24 tx_module(pinCE, pinCSN); //name of the module and pin connections
-const byte address[6] = {"42"}; //address for the module, AFAIK both TX and RX modules should have same value here
+//const byte address[6] = {"42"}; //address for the module, AFAIK both TX and RX modules should have same value here
 
 //==============================PIN DEFINITIONS==============================
 int gen1_switch_pin = 3; //digital pin where the gen1 ON/OFF status is connected to
@@ -109,11 +109,13 @@ void setup() {
 Serial.begin(115200); //start serial communications for debugging
 dht_sensor1.begin();  //start the dht_sensor1 object
 tx_module.begin(); //initialize the TX module
-tx_module.openWritingPipe(address); //open communication pipe
-tx_module.setPALevel(RF24_PA_MAX); //set power of NRF module, can be changed to RF24_PA_MIN for lowest power consumption, BUT MUST BE SAME ON THE RX MODULE!!!
+//tx_module.openWritingPipe(address); //open communication pipe
+tx_module.setChannel(110); //set the radio channel, must be same on RX
 tx_module.setDataRate(RF24_250KBPS); //set bit rate to lowest possible value for best range
-tx_module.setPayloadSize(32);
-tx_module.stopListening(); //puts the NRF module into TRANSMIT MODE
+tx_module.setPALevel(RF24_PA_MAX); //set power of NRF module, can be changed to RF24_PA_MIN for lowest power consumption, BUT MUST BE SAME ON THE RX MODULE!!!
+tx_module.openWritingPipe(0x7878787878LL); //open writing pipe
+//tx_module.setPayloadSize(32);
+//tx_module.stopListening(); //puts the NRF module into TRANSMIT MODE
 
 //==============================PIN MODES==============================
 pinMode(gen1_switch_pin, INPUT_PULLUP);
@@ -169,7 +171,7 @@ pump2_amps_val = map(analogRead(pump2_amps_pin), 0, 1023, 0, a_max); //read and 
 powerlim_val = map(analogRead(powerlim_pin), 0, 1023, 0, plim_max); //read and map power limit value
 
 //==============================STORE DATA IN THE ARRAY nrf_data_packet TO BE SENT OVER THE NRF MODULE==============================
-int nrf_data_packet[14]; //array of variables to be sent, the array seems one smaller than total number of variables because 0-9 not 1-10
+int nrf_data_packet[15]; //array of variables to be sent remember: because 0-9 not 1-10
 
 nrf_data_packet[0] = h;
 nrf_data_packet[1] = t;
@@ -193,37 +195,37 @@ nrf_data_packet[13] = pump2_amps_val;
 nrf_data_packet[14] = powerlim_val;
 
 //==============================SEND DATA OVER tx_module==============================
-tx_module.write(&nrf_data_packet, 32); //sends the values to be transmitted
+tx_module.write(&nrf_data_packet, 30); //sends the values to be transmitted
 
 //==============================SERIAL OUTPUT==============================
-Serial.print(" Humidity =:"); Serial.print(h); Serial.print("%"); Serial.print("["); Serial.print(nrf_data_packet[0]); Serial.print("]");//output humidity to serial, and value stored in array position[0]
-Serial.print(" Temperature =:"); Serial.print(t); Serial.print("C"); Serial.print("["); Serial.print(nrf_data_packet[1]); Serial.print("]"); //output temperature to serial, and value stored in array position[1]
+Serial.print(" Humidity =:"); Serial.print(h); Serial.print("%"); // Serial.print("["); Serial.print(nrf_data_packet[0]); Serial.print("]");//output humidity to serial, and value stored in array position[0]
+Serial.print(" Temperature =:"); Serial.print(t); Serial.print("C"); // Serial.print("["); Serial.print(nrf_data_packet[1]); Serial.print("]"); //output temperature to serial, and value stored in array position[1]
 
 if (gen1_switch_state == 1){Serial.print("   G1S:"); Serial.print(gen1_onstate);} //output gen1 ON state
 else {Serial.print("   G1S:"); Serial.print(gen1_offstate);} //output gen1 OFF state
-Serial.print("["); Serial.print(nrf_data_packet[2]); Serial.print("]"); //value stored in array position[x]
-Serial.print(" G1V:"); Serial.print(gen1_volts_val); Serial.print("V");Serial.print("["); Serial.print(nrf_data_packet[3]); Serial.print("]"); //output voltage on gen1, and value stored in array position[x]
-Serial.print(" G1A:"); Serial.print(gen1_amps_val); Serial.print("A");Serial.print("["); Serial.print(nrf_data_packet[4]); Serial.print("]"); //output current on gen1
+//Serial.print("["); Serial.print(nrf_data_packet[2]); Serial.print("]"); //value stored in array position[x]
+Serial.print(" G1V:"); Serial.print(gen1_volts_val); Serial.print("V"); // Serial.print("["); Serial.print(nrf_data_packet[3]); Serial.print("]"); //output voltage on gen1, and value stored in array position[x]
+Serial.print(" G1A:"); Serial.print(gen1_amps_val); Serial.print("A"); // Serial.print("["); Serial.print(nrf_data_packet[4]); Serial.print("]"); //output current on gen1
 
 if (gen2_switch_state == 1){Serial.print("   G2S:"); Serial.print(gen2_onstate);} //output gen2 ON state
 else {Serial.print("   G2S:"); Serial.print(gen2_offstate);} //output gen2 OFF state
-Serial.print("["); Serial.print(nrf_data_packet[5]); Serial.print("]"); //value stored in array position[x]
-Serial.print(" G2V:"); Serial.print(gen2_volts_val); Serial.print("["); Serial.print(nrf_data_packet[6]); Serial.print("]"); Serial.print("V"); //output gen2 voltage, and value stored in array position[x]
-Serial.print(" G2A:"); Serial.print(gen2_amps_val); Serial.print("A"); Serial.print("["); Serial.print(nrf_data_packet[7]); Serial.print("]"); //output gen2 current, and value stored in array position[x]
+//Serial.print("["); Serial.print(nrf_data_packet[5]); Serial.print("]"); //value stored in array position[x]
+Serial.print(" G2V:"); Serial.print(gen2_volts_val); // Serial.print("["); Serial.print(nrf_data_packet[6]); Serial.print("]"); Serial.print("V"); //output gen2 voltage, and value stored in array position[x]
+Serial.print(" G2A:"); Serial.print(gen2_amps_val); // Serial.print("A"); Serial.print("["); Serial.print(nrf_data_packet[7]); Serial.print("]"); //output gen2 current, and value stored in array position[x]
 
 if (pump1_switch_state == 1){Serial.print("   P1S:"); Serial.print(pump1_onstate);} //output pump1 ON state
 else {Serial.print("   P1S:"); Serial.print(pump1_offstate);} //output pump1 OFF state
-Serial.print("["); Serial.print(nrf_data_packet[8]); Serial.print("]"); //value stored in array position[x]
-Serial.print(" P1V:"); Serial.print(pump1_volts_val); Serial.print("V"); Serial.print("["); Serial.print(nrf_data_packet[9]); Serial.print("]"); //output pump1 voltage, and value stored in array position[x]
-Serial.print(" P1A:"); Serial.print(pump1_amps_val); Serial.print("A"); Serial.print("["); Serial.print(nrf_data_packet[10]); Serial.print("]"); //output pump1 current, and value stored in array position[x]
+//Serial.print("["); Serial.print(nrf_data_packet[8]); Serial.print("]"); //value stored in array position[x]
+Serial.print(" P1V:"); Serial.print(pump1_volts_val); Serial.print("V"); // Serial.print("["); Serial.print(nrf_data_packet[9]); Serial.print("]"); //output pump1 voltage, and value stored in array position[x]
+Serial.print(" P1A:"); Serial.print(pump1_amps_val); Serial.print("A"); // Serial.print("["); Serial.print(nrf_data_packet[10]); Serial.print("]"); //output pump1 current, and value stored in array position[x]
 
 if (pump2_switch_state == 1){Serial.print("   P2S:"); Serial.print(pump2_onstate);} //output pump2 ON state
 else {Serial.print("   P2S:"); Serial.print(pump2_offstate);} //output pump2 OFF state
-Serial.print("["); Serial.print(nrf_data_packet[11]); Serial.print("]"); //value stored in array position[x]
-Serial.print(" P2V:"); Serial.print(pump2_volts_val); Serial.print("V"); Serial.print("["); Serial.print(nrf_data_packet[12]); Serial.print("]"); //output pump2 voltage, and value stored in array position[x]
-Serial.print(" P2A:"); Serial.print(pump2_amps_val); Serial.print("A"); Serial.print("["); Serial.print(nrf_data_packet[13]); Serial.print("]"); //output pump2 current, and value stored in array position[x]
+//Serial.print("["); Serial.print(nrf_data_packet[11]); Serial.print("]"); //value stored in array position[x]
+Serial.print(" P2V:"); Serial.print(pump2_volts_val); Serial.print("V"); // Serial.print("["); Serial.print(nrf_data_packet[12]); Serial.print("]"); //output pump2 voltage, and value stored in array position[x]
+Serial.print(" P2A:"); Serial.print(pump2_amps_val); Serial.print("A"); // Serial.print("["); Serial.print(nrf_data_packet[13]); Serial.print("]"); //output pump2 current, and value stored in array position[x]
 
-Serial.print("   P_lim(%)"); Serial.print(powerlim_val); Serial.print("%"); Serial.print("["); Serial.print(nrf_data_packet[14]); Serial.print("]"); //output power limit value, and value stored in array position[x]
+Serial.print("   P_lim(%)"); Serial.print(powerlim_val); Serial.print("%"); // Serial.print("["); Serial.print(nrf_data_packet[14]); Serial.print("]"); //output power limit value, and value stored in array position[x]
 
 Serial.println(" "); //carriage return
 
