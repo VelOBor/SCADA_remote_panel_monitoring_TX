@@ -171,7 +171,7 @@ pump2_amps_val = map(analogRead(pump2_amps_pin), 0, 1023, 0, a_max); //read and 
 powerlim_val = map(analogRead(powerlim_pin), 0, 1023, 0, plim_max); //read and map power limit value
 
 //==============================STORE DATA IN THE ARRAY nrf_data_packet TO BE SENT OVER THE NRF MODULE==============================
-int nrf_data_packet[15]; //array of variables to be sent remember: because 0-9 not 1-10
+int nrf_data_packet[30]; //array of variables to be sent remember: because 0-9 not 1-10
 
 nrf_data_packet[0] = h;
 nrf_data_packet[1] = t;
